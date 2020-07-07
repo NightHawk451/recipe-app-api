@@ -9,13 +9,13 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ('id', 'name')
-        read_only_Fields = ('id',)
+        read_only_fields = ('id',)
 
 
-class IngredientSerializer(serializers.Serializer):
+class IngredientSerializer(serializers.ModelSerializer):
     """Serializer for ingredient objects"""
 
-    class meta:
+    class Meta:
         model = Ingredient
         fields = ('id', 'name')
-        read_only_Fields = ('id',)
+        read_only_fields = ('id',)
