@@ -1,5 +1,5 @@
-import os
 import tempfile
+import os
 
 from PIL import Image
 
@@ -14,10 +14,8 @@ from core.models import Recipe, Tag, Ingredient
 
 from recipe.serializers import RecipeSerializer, RecipeDetailSerializer
 
-RECIPES_URL = reverse('recipe:recipe-list')
 
-# /api/recipe/recipes
-# /api/recipe/recipes/1/
+RECIPES_URL = reverse('recipe:recipe-list')
 
 
 def image_upload_url(recipe_id):
@@ -30,7 +28,7 @@ def detail_url(recipe_id):
     return reverse('recipe:recipe-detail', args=[recipe_id])
 
 
-def sample_tag(user, name='Main Course'):
+def sample_tag(user, name='Main course'):
     """Create and return a sample tag"""
     return Tag.objects.create(user=user, name=name)
 
@@ -58,15 +56,15 @@ class PublicRecipeApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
-    def test_required_auth(self):
-        """Test the authenticaiton is required"""
+    def test_auth_required(self):
+        """Test that authentication is required"""
         res = self.client.get(RECIPES_URL)
 
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class PrivateRecipeApiTests(TestCase):
-    """Test authenticated recipe API access"""
+    """Test unauthenticated recipe API access"""
 
     def setUp(self):
         self.client = APIClient()
@@ -77,7 +75,7 @@ class PrivateRecipeApiTests(TestCase):
         self.client.force_authenticate(self.user)
 
     def test_retrieve_recipes(self):
-        """Test retrieving list of recipes"""
+        """Test retrieving a list of recipes"""
         sample_recipe(user=self.user)
         sample_recipe(user=self.user)
 
@@ -92,7 +90,7 @@ class PrivateRecipeApiTests(TestCase):
         """Test retrieving recipes for user"""
         user2 = get_user_model().objects.create_user(
             'other@londonappdev.com',
-            'pass'
+            'password123'
         )
         sample_recipe(user=user2)
         sample_recipe(user=self.user)
@@ -120,9 +118,9 @@ class PrivateRecipeApiTests(TestCase):
     def test_create_basic_recipe(self):
         """Test creating recipe"""
         payload = {
-            'title': 'Test recipe',
+            'title': 'Chocolate cheesecake',
             'time_minutes': 30,
-            'price': 10.00,
+            'price': 5.00
         }
         res = self.client.post(RECIPES_URL, payload)
 
@@ -133,13 +131,13 @@ class PrivateRecipeApiTests(TestCase):
 
     def test_create_recipe_with_tags(self):
         """Test creating a recipe with tags"""
-        tag1 = sample_tag(user=self.user, name='Tag 1')
-        tag2 = sample_tag(user=self.user, name='Tag 2')
+        tag1 = sample_tag(user=self.user, name='Vegan')
+        tag2 = sample_tag(user=self.user, name='Dessert')
         payload = {
-            'title': 'Test recipe with two tags',
+            'title': 'Avocado lime cheesecake',
             'tags': [tag1.id, tag2.id],
-            'time_minutes': 30,
-            'price': 10.00
+            'time_minutes': 60,
+            'price': 20.00
         }
         res = self.client.post(RECIPES_URL, payload)
 
@@ -152,15 +150,14 @@ class PrivateRecipeApiTests(TestCase):
 
     def test_create_recipe_with_ingredients(self):
         """Test creating recipe with ingredients"""
-        ingredient1 = sample_ingredient(user=self.user, name='Ingredient 1')
-        ingredient2 = sample_ingredient(user=self.user, name='Ingredient 2')
+        ingredient1 = sample_ingredient(user=self.user, name='Prawns')
+        ingredient2 = sample_ingredient(user=self.user, name='Ginger')
         payload = {
-            'title': 'Test recipe with ingredients',
+            'title': 'Thai prawn red curry',
             'ingredients': [ingredient1.id, ingredient2.id],
-            'time_minutes': 45,
-            'price': 15.00
+            'time_minutes': 20,
+            'price': 7.00
         }
-
         res = self.client.post(RECIPES_URL, payload)
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
@@ -175,9 +172,8 @@ class PrivateRecipeApiTests(TestCase):
         recipe = sample_recipe(user=self.user)
         recipe.tags.add(sample_tag(user=self.user))
         new_tag = sample_tag(user=self.user, name='Curry')
-        payload = {
-            'title': 'Chicken tikka', 'tags': [new_tag.id]
-        }
+
+        payload = {'title': 'Chicken tikka', 'tags': [new_tag.id]}
         url = detail_url(recipe.id)
         self.client.patch(url, payload)
 
@@ -198,6 +194,7 @@ class PrivateRecipeApiTests(TestCase):
         }
         url = detail_url(recipe.id)
         self.client.put(url, payload)
+
         recipe.refresh_from_db()
         self.assertEqual(recipe.title, payload['title'])
         self.assertEqual(recipe.time_minutes, payload['time_minutes'])
@@ -224,10 +221,9 @@ class RecipeImageUploadTests(TestCase):
         """Test uploading an email to recipe"""
         url = image_upload_url(self.recipe.id)
         with tempfile.NamedTemporaryFile(suffix='.jpg') as ntf:
-            img = Image.new("RGB", (10, 10))
+            img = Image.new('RGB', (10, 10))
             img.save(ntf, format='JPEG')
-            ntf.seek(0)  # set points to begining of file
-            # multipart form that constist of 2 parts (e.g. data and image)
+            ntf.seek(0)
             res = self.client.post(url, {'image': ntf}, format='multipart')
 
         self.recipe.refresh_from_db()
@@ -254,7 +250,7 @@ class RecipeImageUploadTests(TestCase):
 
         res = self.client.get(
             RECIPES_URL,
-            {'tags': '{},{}'.format(tag1.id, tag2.id)}
+            {'tags': f'{tag1.id},{tag2.id}'}
         )
 
         serializer1 = RecipeSerializer(recipe1)
@@ -276,7 +272,7 @@ class RecipeImageUploadTests(TestCase):
 
         res = self.client.get(
             RECIPES_URL,
-            {'ingredients': '{},{}'.format(ingredient1.id, ingredient2.id)}
+            {'ingredients': f'{ingredient1.id},{ingredient2.id}'}
         )
 
         serializer1 = RecipeSerializer(recipe1)

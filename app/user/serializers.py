@@ -33,7 +33,7 @@ class AuthTokenSerializer(serializers.Serializer):
     email = serializers.CharField()
     password = serializers.CharField(
         style={'input_type': 'password'},
-        trim_whitespace=False,
+        trim_whitespace=False
     )
 
     def validate(self, attrs):
